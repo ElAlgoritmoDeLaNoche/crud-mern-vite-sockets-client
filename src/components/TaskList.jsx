@@ -34,14 +34,9 @@ function TaskList() {
       );
     });
 
-    socket.on('eliminarTarea', (id) => {
-      setTasks((prevTasks) => prevTasks.filter((task) => task._id !== id));
-    });
-
     return () => {
       socket.off('tareaCreada');
       socket.off('tareaEditada');
-      socket.off('eliminarTarea');
     };
   }, []);
 
