@@ -34,9 +34,14 @@ function TaskList() {
       );
     });
 
+    socket.on('eliminarTarea', (id) => {
+      setTasks((prevTasks) => prevTasks.filter((task) => task._id !== id));
+    });
+
     return () => {
       socket.off('tareaCreada');
       socket.off('tareaEditada');
+      socket.off('eliminarTarea');
     };
   }, []);
 
@@ -77,6 +82,16 @@ function TaskList() {
     }
   };
 
+  const handleDeleteTask = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5002/api/tasks/${id}`);
+      setTasks((prevTasks) => prevTasks.filter((task) => task._id !== id));
+      console.log('Tarea eliminada correctamente');
+    } catch (error) {
+      console.error('Error al eliminar la tarea:', error);
+    }
+  };
+
   return (
     <div>
       <h2>Lista de Tareas</h2>
@@ -86,7 +101,7 @@ function TaskList() {
             <h3>{task.title}</h3>
             <p>{task.description}</p>
             <button style={{ marginRight: '10px' }} onClick={() => handleEditTask(task)}>Editar</button>
-            {/* <button onClick={() => handleDeleteTask(task._id)}>Eliminar</button> */}
+            <button onClick={() => handleDeleteTask(task._id)}>Eliminar</button>
           </li>
         ))}
       </ul>
