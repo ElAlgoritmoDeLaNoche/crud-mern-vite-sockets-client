@@ -1,51 +1,58 @@
-// EditTaskForm.js
-import React, { useState, useEffect } from 'react';
-import socket from '../services/socketService';
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
 
-function EditTaskForm({ task }) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+const EditTaskForm = ({ taskToEdit, fetchTasks }) => {
+
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
 
   useEffect(() => {
-    setTitle(task.title);
-    setDescription(task.description);
-  }, [task]);
+    if (taskToEdit) {
+      setTitle(taskToEdit.title)
+      setDescription(taskToEdit.description)
+    }
+  }, [taskToEdit])
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
 
-    socket.emit('editarTarea', { id: task._id, title, description });
+      await axios.put(`http://localhost:5002/api/tasks/${taskToEdit._id}`, {
+        title: title,
+        description: description,
+      })
 
-    setTitle('')
-    setDescription('')
-  };
+      setTitle('')
+      setDescription('')
+      fetchTasks()
+    } catch (error) {
+      console.error('Error updating task:', error)
+    }
+  }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div>
+      <h2>Edit Task</h2>
       <div>
-        <label htmlFor="title">Título:</label>
+        <label>Title:</label>
         <input
           type="text"
-          id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
         />
       </div>
-      <br />
       <div>
-        <label htmlFor="description">Descripción:</label>
+        <label>Description:</label>
         <textarea
-          id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
         />
       </div>
-      <br />
-      <button type="submit">Actualizar</button>
-    </form>
-  );
+      <button onClick={handleSubmit}>Update Task</button>
+    </div>
+  )
 }
 
-export default EditTaskForm;
+export default EditTaskForm

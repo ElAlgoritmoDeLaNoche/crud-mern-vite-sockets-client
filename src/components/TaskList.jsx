@@ -1,113 +1,60 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import io from 'socket.io-client';
-import TaskForm from './TaskForm';
-import EditTaskForm from './EditTaskForm';
+// TaskList.js
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
+import EditTaskForm from './EditTaskForm'
+import CreateTaskForm from './CreateTaskForm'
 
-const socket = io('http://localhost:5002');
+const TaskList = () => {
 
-function TaskList() {
-  const [tasks, setTasks] = useState([]);
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [tasks, setTasks] = useState([])
+  const [taskToEdit, setTaskToEdit] = useState(null)
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await axios.get('http://localhost:5002/api/tasks');
-        setTasks(response.data);
-      } catch (error) {
-        console.error('Error al cargar las tareas:', error);
-      }
-    };
+    fetchTasks()
+  }, [])
 
-    fetchTasks();
-
-    socket.on('tareaCreada', (nuevaTarea) => {
-      setTasks((prevTasks) => [...prevTasks, nuevaTarea]);
-    });
-
-    socket.on('tareaEditada', (updatedTask) => {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task._id === updatedTask._id ? updatedTask : task
-        )
-      );
-    });
-
-    return () => {
-      socket.off('tareaCreada');
-      socket.off('tareaEditada');
-    };
-  }, []);
+  const fetchTasks = async () => {
+    try {
+      const response = await axios.get('http://localhost:5002/api/tasks')
+      setTasks(response.data)
+    } catch (error) {
+      console.error('Error fetching tasks:', error)
+    }
+  }
 
   const handleEditTask = (task) => {
-    setSelectedTask(task);
-  };
-
-  const handleTaskSubmit = async (taskData) => {
-    try {
-      const response = await axios.post(
-        'http://localhost:5002/api/tasks',
-        taskData
-      );
-      const newTask = response.data;
-      setTasks((prevTasks) => [...prevTasks, newTask]);
-      console.log('Nueva tarea creada:', newTask);
-    } catch (error) {
-      console.error('Error al crear la tarea:', error);
-    }
-  };
-
-  const handleEditTaskSubmit = async (updatedTaskData) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:5002/api/tasks/${updatedTaskData._id}`,
-        updatedTaskData
-      );
-      const updatedTask = response.data;
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task._id === updatedTask._id ? updatedTask : task
-        )
-      );
-      console.log('Tarea actualizada:', updatedTask);
-      setSelectedTask(null);
-    } catch (error) {
-      console.error('Error al actualizar la tarea:', error);
-    }
-  };
+    setTaskToEdit(task)
+  }
 
   const handleDeleteTask = async (id) => {
     try {
-      await axios.delete(`http://localhost:5002/api/tasks/${id}`);
-      setTasks((prevTasks) => prevTasks.filter((task) => task._id !== id));
-      console.log('Tarea eliminada correctamente');
+      await axios.delete(`http://localhost:5002/api/tasks/${id}`)
+      // Refrescar la lista de tareas después de eliminar
+      fetchTasks()
     } catch (error) {
-      console.error('Error al eliminar la tarea:', error);
+      console.error('Error deleting task:', error)
     }
-  };
+  }
 
   return (
     <div>
-      <h2>Lista de Tareas</h2>
-      <ul>
-        {tasks.map((task) => (
-          <li key={task._id}>
-            <h3>{task.title}</h3>
-            <p>{task.description}</p>
-            <button style={{ marginRight: '10px' }} onClick={() => handleEditTask(task)}>Editar</button>
-            <button onClick={() => handleDeleteTask(task._id)}>Eliminar</button>
-          </li>
-        ))}
-      </ul>
-
-      {selectedTask ? (
-        <EditTaskForm task={selectedTask} onSubmit={handleEditTaskSubmit} />
-      ) : (
-        <TaskForm onSubmit={handleTaskSubmit} />
-      )}
+      <div className='tasks-container'>
+        <h2>Tasks:</h2>
+        <ul>
+          {tasks.map((task) => (
+            <li key={task._id}>
+              <h3>{task.title}</h3>
+              <p>{task.description}</p>
+              <img src={`http://localhost:5002/${task.imageUrl}`} width='100px' height='100px' alt='Task' />
+              <button onClick={() => handleEditTask(task)}>Edit</button>
+              <button onClick={() => handleDeleteTask(task._id)}>Delete</button>
+            </li>
+          ))}
+        </ul>
+        {taskToEdit ? <EditTaskForm taskToEdit={taskToEdit} fetchTasks={fetchTasks} /> : <CreateTaskForm fetchTasks={fetchTasks} />}
+      </div>
     </div>
-  );
+  )
 }
 
-export default TaskList;
+export default TaskList
